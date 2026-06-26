@@ -1,18 +1,21 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="zh-HK">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>French Verbs</title>
     <style>
         :root {
-            /* iOS System Colors */
             --bg: #f2f2f7; 
             --card-bg: #ffffff;
             --text-main: #000000;
             --text-sub: #8e8e93;
             --blue: #007aff;
             --border: #c6c6c8;
+            --tag-a1: #34c759;
+            --tag-a2: #ff9500;
+            --tag-reg: #5ac8fa;
+            --tag-irreg: #ff3b30;
         }
 
         body {
@@ -21,7 +24,7 @@
             color: var(--text-main);
             margin: 0;
             padding: 0;
-            overflow: hidden; /* Prevent bouncing of the whole page */
+            overflow: hidden; 
             -webkit-font-smoothing: antialiased;
         }
 
@@ -48,7 +51,7 @@
         }
         #detailView.active { transform: translateX(0); }
 
-        /* Headers with Safe Area for Dynamic Island */
+        /* Headers */
         .header {
             background-color: var(--card-bg);
             padding-top: max(10px, env(safe-area-inset-top));
@@ -65,11 +68,10 @@
             line-height: 44px;
         }
 
-        /* Navigation Buttons */
         .back-btn {
             position: absolute;
             left: 10px;
-            bottom: 10px; /* Align with text */
+            bottom: 10px;
             color: var(--blue);
             font-size: 17px;
             background: none;
@@ -88,11 +90,13 @@
             margin-top: -4px;
         }
 
-        /* Search Bar */
-        .search-container {
-            padding: 10px 16px;
+        /* Search & Filters */
+        .top-controls {
             background-color: var(--card-bg);
             border-bottom: 1px solid var(--border);
+        }
+        .search-container {
+            padding: 10px 16px 5px 16px;
         }
         #searchInput {
             width: 100%;
@@ -106,11 +110,39 @@
             -webkit-appearance: none;
         }
 
-        /* Scrollable Content Areas */
+        /* Filter Chips Container */
+        .filter-container {
+            display: flex;
+            overflow-x: auto;
+            padding: 5px 16px 12px 16px;
+            gap: 10px;
+            -webkit-overflow-scrolling: touch;
+        }
+        /* Hide scrollbar for filters */
+        .filter-container::-webkit-scrollbar { display: none; }
+        
+        .filter-chip {
+            padding: 6px 14px;
+            background-color: #e3e3e8;
+            color: var(--text-main);
+            border-radius: 16px;
+            font-size: 14px;
+            font-weight: 500;
+            white-space: nowrap;
+            flex-shrink: 0;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .filter-chip.active {
+            background-color: var(--blue);
+            color: white;
+        }
+
+        /* Scrollable Content */
         .scroll-content {
             flex: 1;
             overflow-y: auto;
-            -webkit-overflow-scrolling: touch; /* Smooth iOS scrolling */
+            -webkit-overflow-scrolling: touch;
             padding-bottom: max(20px, env(safe-area-inset-bottom));
         }
 
@@ -132,16 +164,30 @@
         .verb-item:last-child { border-bottom: none; }
         .verb-item:active { background-color: #e5e5ea; }
         
+        .verb-info { display: flex; flex-direction: column; gap: 4px; }
         .verb-title { font-size: 17px; font-weight: 500; }
         .verb-trans { font-size: 15px; color: var(--text-sub); }
+        
+        /* Small Tags inside list */
+        .tags-row { display: flex; gap: 6px; margin-top: 2px; }
+        .tag {
+            font-size: 11px;
+            font-weight: 600;
+            padding: 2px 6px;
+            border-radius: 4px;
+            color: white;
+        }
+        .tag-a1 { background-color: var(--tag-a1); }
+        .tag-a2 { background-color: var(--tag-a2); }
+        .tag-reg { background-color: var(--tag-reg); }
+        .tag-irreg { background-color: var(--tag-irreg); }
+
         .chevron { color: #c7c7cc; font-size: 20px; font-weight: bold;}
 
         /* Detail Cards */
-        .verb-header {
-            padding: 20px 16px 10px;
-        }
+        .verb-header { padding: 20px 16px 10px; }
         .verb-header h2 { margin: 0; font-size: 32px; font-weight: 700; color: var(--text-main); }
-        .verb-header p { margin: 5px 0 0 0; font-size: 17px; color: var(--text-sub); }
+        .verb-header p { margin: 5px 0 10px 0; font-size: 17px; color: var(--text-sub); }
 
         .card {
             background: var(--card-bg);
@@ -177,11 +223,22 @@
 
     <div id="listView" class="view">
         <div class="header">
-            <h1>Verbs A1-A2</h1>
+            <h1>法文動詞 A1-A2</h1>
         </div>
-        <div class="search-container">
-            <input type="text" id="searchInput" placeholder="Search a verb..." autocomplete="off" autocorrect="off" autocapitalize="none">
+        
+        <div class="top-controls">
+            <div class="search-container">
+                <input type="text" id="searchInput" placeholder="搜尋動詞 (法文/英文)..." autocomplete="off" autocorrect="off" autocapitalize="none">
+            </div>
+            <div class="filter-container">
+                <div class="filter-chip active" onclick="setFilter('all', this)">全部</div>
+                <div class="filter-chip" onclick="setFilter('A1', this)">A1 級別</div>
+                <div class="filter-chip" onclick="setFilter('A2', this)">A2 級別</div>
+                <div class="filter-chip" onclick="setFilter('reg', this)">規則動詞</div>
+                <div class="filter-chip" onclick="setFilter('irreg', this)">不規則動詞</div>
+            </div>
         </div>
+
         <div class="scroll-content">
             <div class="verb-list" id="verbList"></div>
         </div>
@@ -189,7 +246,7 @@
 
     <div id="detailView" class="view">
         <div class="header">
-            <button class="back-btn" onclick="hideDetail()">Back</button>
+            <button class="back-btn" onclick="hideDetail()">返回</button>
             <h1 id="detailTitle">Verb</h1>
         </div>
         <div class="scroll-content" id="detailContent">
@@ -197,144 +254,147 @@
     </div>
 
     <script>
-        // THE DATABASE (130+ A1-A2 Verbs)
+        // DATABASE WITH LEVEL & CATEGORY TAGS
         const db = [
-            { v: "être", tr: "to be", t: "irreg", pres: ["suis","es","est","sommes","êtes","sont"], pp: "été", aux: "a", imp_stem: "ét" },
-            { v: "avoir", tr: "to have", t: "irreg", pres: ["ai","as","a","avons","avez","ont"], pp: "eu", aux: "a", imp_stem: "av" },
-            { v: "aller", tr: "to go", t: "irreg", pres: ["vais","vas","va","allons","allez","vont"], pp: "allé", aux: "e", imp_stem: "all" },
-            { v: "faire", tr: "to do/make", t: "irreg", pres: ["fais","fais","fait","faisons","faites","font"], pp: "fait", aux: "a", imp_stem: "fais" },
-            { v: "dire", tr: "to say", t: "irreg", pres: ["dis","dis","dit","disons","dites","disent"], pp: "dit", aux: "a", imp_stem: "dis" },
-            { v: "pouvoir", tr: "to be able to", t: "irreg", pres: ["peux","peux","peut","pouvons","pouvez","peuvent"], pp: "pu", aux: "a", imp_stem: "pouv" },
-            { v: "vouloir", tr: "to want", t: "irreg", pres: ["veux","veux","veut","voulons","voulez","veulent"], pp: "voulu", aux: "a", imp_stem: "voul" },
-            { v: "savoir", tr: "to know (fact)", t: "irreg", pres: ["sais","sais","sait","savons","savez","savent"], pp: "su", aux: "a", imp_stem: "sav" },
-            { v: "voir", tr: "to see", t: "irreg", pres: ["vois","vois","voit","voyons","voyez","voient"], pp: "vu", aux: "a", imp_stem: "voy" },
-            { v: "devoir", tr: "to have to", t: "irreg", pres: ["dois","dois","doit","devons","devez","doivent"], pp: "dû", aux: "a", imp_stem: "dev" },
-            { v: "venir", tr: "to come", t: "irreg", pres: ["viens","viens","vient","venons","venez","viennent"], pp: "venu", aux: "e", imp_stem: "ven" },
-            { v: "prendre", tr: "to take", t: "irreg", pres: ["prends","prends","prend","prenons","prenez","prennent"], pp: "pris", aux: "a", imp_stem: "pren" },
-            { v: "mettre", tr: "to put", t: "irreg", pres: ["mets","mets","met","mettons","mettez","mettent"], pp: "mis", aux: "a", imp_stem: "mett" },
-            { v: "lire", tr: "to read", t: "irreg", pres: ["lis","lis","lit","lisons","lisez","lisent"], pp: "lu", aux: "a", imp_stem: "lis" },
-            { v: "écrire", tr: "to write", t: "irreg", pres: ["écris","écris","écrit","écrivons","écrivez","écrivent"], pp: "écrit", aux: "a", imp_stem: "écriv" },
-            { v: "boire", tr: "to drink", t: "irreg", pres: ["bois","bois","boit","buvons","buvez","boivent"], pp: "bu", aux: "a", imp_stem: "buv" },
-            { v: "dormir", tr: "to sleep", t: "irreg", pres: ["dors","dors","dort","dormons","dormez","dorment"], pp: "dormi", aux: "a", imp_stem: "dorm" },
-            { v: "partir", tr: "to leave", t: "irreg", pres: ["pars","pars","part","partons","partez","partent"], pp: "parti", aux: "e", imp_stem: "part" },
-            { v: "sortir", tr: "to go out", t: "irreg", pres: ["sors","sors","sort","sortons","sortez","sortent"], pp: "sorti", aux: "e", imp_stem: "sort" },
-            { v: "connaître", tr: "to know (person)", t: "irreg", pres: ["connais","connais","connaît","connaissons","connaissez","connaissent"], pp: "connu", aux: "a", imp_stem: "connaiss" },
+            // IRREGULAR
+            { v: "être", tr: "to be", lvl: "A1", t: "irreg", pres: ["suis","es","est","sommes","êtes","sont"], pp: "été", aux: "a", imp_stem: "ét" },
+            { v: "avoir", tr: "to have", lvl: "A1", t: "irreg", pres: ["ai","as","a","avons","avez","ont"], pp: "eu", aux: "a", imp_stem: "av" },
+            { v: "aller", tr: "to go", lvl: "A1", t: "irreg", pres: ["vais","vas","va","allons","allez","vont"], pp: "allé", aux: "e", imp_stem: "all" },
+            { v: "faire", tr: "to do/make", lvl: "A1", t: "irreg", pres: ["fais","fais","fait","faisons","faites","font"], pp: "fait", aux: "a", imp_stem: "fais" },
+            { v: "dire", tr: "to say", lvl: "A1", t: "irreg", pres: ["dis","dis","dit","disons","dites","disent"], pp: "dit", aux: "a", imp_stem: "dis" },
+            { v: "pouvoir", tr: "to be able to", lvl: "A1", t: "irreg", pres: ["peux","peux","peut","pouvons","pouvez","peuvent"], pp: "pu", aux: "a", imp_stem: "pouv" },
+            { v: "vouloir", tr: "to want", lvl: "A1", t: "irreg", pres: ["veux","veux","veut","voulons","voulez","veulent"], pp: "voulu", aux: "a", imp_stem: "voul" },
+            { v: "savoir", tr: "to know (fact)", lvl: "A1", t: "irreg", pres: ["sais","sais","sait","savons","savez","savent"], pp: "su", aux: "a", imp_stem: "sav" },
+            { v: "voir", tr: "to see", lvl: "A1", t: "irreg", pres: ["vois","vois","voit","voyons","voyez","voient"], pp: "vu", aux: "a", imp_stem: "voy" },
+            { v: "devoir", tr: "to have to", lvl: "A1", t: "irreg", pres: ["dois","dois","doit","devons","devez","doivent"], pp: "dû", aux: "a", imp_stem: "dev" },
+            { v: "venir", tr: "to come", lvl: "A1", t: "irreg", pres: ["viens","viens","vient","venons","venez","viennent"], pp: "venu", aux: "e", imp_stem: "ven" },
+            { v: "prendre", tr: "to take", lvl: "A1", t: "irreg", pres: ["prends","prends","prend","prenons","prenez","prennent"], pp: "pris", aux: "a", imp_stem: "pren" },
+            { v: "mettre", tr: "to put", lvl: "A1", t: "irreg", pres: ["mets","mets","met","mettons","mettez","mettent"], pp: "mis", aux: "a", imp_stem: "mett" },
+            { v: "lire", tr: "to read", lvl: "A1", t: "irreg", pres: ["lis","lis","lit","lisons","lisez","lisent"], pp: "lu", aux: "a", imp_stem: "lis" },
+            { v: "écrire", tr: "to write", lvl: "A1", t: "irreg", pres: ["écris","écris","écrit","écrivons","écrivez","écrivent"], pp: "écrit", aux: "a", imp_stem: "écriv" },
+            { v: "boire", tr: "to drink", lvl: "A1", t: "irreg", pres: ["bois","bois","boit","buvons","buvez","boivent"], pp: "bu", aux: "a", imp_stem: "buv" },
+            { v: "dormir", tr: "to sleep", lvl: "A1", t: "irreg", pres: ["dors","dors","dort","dormons","dormez","dorment"], pp: "dormi", aux: "a", imp_stem: "dorm" },
+            { v: "partir", tr: "to leave", lvl: "A1", t: "irreg", pres: ["pars","pars","part","partons","partez","partent"], pp: "parti", aux: "e", imp_stem: "part" },
+            { v: "sortir", tr: "to go out", lvl: "A1", t: "irreg", pres: ["sors","sors","sort","sortons","sortez","sortent"], pp: "sorti", aux: "e", imp_stem: "sort" },
+            { v: "connaître", tr: "to know (person)", lvl: "A2", t: "irreg", pres: ["connais","connais","connaît","connaissons","connaissez","connaissent"], pp: "connu", aux: "a", imp_stem: "connaiss" },
 
-            // REGULAR -ER VERBS
-            { v: "accepter", tr: "to accept", t: "er" },
-            { v: "accompagner", tr: "to accompany", t: "er" },
-            { v: "acheter", tr: "to buy", t: "er", sp: "achèt" },
-            { v: "adorer", tr: "to love/adore", t: "er" },
-            { v: "aider", tr: "to help", t: "er" },
-            { v: "aimer", tr: "to like/love", t: "er" },
-            { v: "ajouter", tr: "to add", t: "er" },
-            { v: "allumer", tr: "to turn on", t: "er" },
-            { v: "amener", tr: "to bring", t: "er", sp: "amèn" },
-            { v: "amuser", tr: "to amuse", t: "er" },
-            { v: "annuler", tr: "to cancel", t: "er" },
-            { v: "apporter", tr: "to bring (thing)", t: "er" },
-            { v: "appeler", tr: "to call", t: "er", sp: "appell" },
-            { v: "arrêter", tr: "to stop", t: "er" },
-            { v: "arriver", tr: "to arrive", t: "er", aux: "e" },
-            { v: "bavarder", tr: "to chat", t: "er" },
-            { v: "casser", tr: "to break", t: "er" },
-            { v: "changer", tr: "to change", t: "er", sp: "ger" },
-            { v: "chanter", tr: "to sing", t: "er" },
-            { v: "chercher", tr: "to look for", t: "er" },
-            { v: "commencer", tr: "to begin", t: "er", sp: "cer" },
-            { v: "commander", tr: "to order", t: "er" },
-            { v: "compter", tr: "to count", t: "er" },
-            { v: "continuer", tr: "to continue", t: "er" },
-            { v: "coucher", tr: "to put to bed", t: "er" },
-            { v: "couper", tr: "to cut", t: "er" },
-            { v: "coûter", tr: "to cost", t: "er" },
-            { v: "crier", tr: "to shout", t: "er" },
-            { v: "danser", tr: "to dance", t: "er" },
-            { v: "demander", tr: "to ask", t: "er" },
-            { v: "dépenser", tr: "to spend", t: "er" },
-            { v: "détester", tr: "to hate", t: "er" },
-            { v: "dîner", tr: "to dine", t: "er" },
-            { v: "donner", tr: "to give", t: "er" },
-            { v: "écouter", tr: "to listen", t: "er" },
-            { v: "emprunter", tr: "to borrow", t: "er" },
-            { v: "enlever", tr: "to remove", t: "er", sp: "enlèv" },
-            { v: "entrer", tr: "to enter", t: "er", aux: "e" },
-            { v: "espérer", tr: "to hope", t: "er", sp: "espèr" },
-            { v: "essayer", tr: "to try", t: "er", sp: "essaie" },
-            { v: "excuser", tr: "to excuse", t: "er" },
-            { v: "expliquer", tr: "to explain", t: "er" },
-            { v: "fermer", tr: "to close", t: "er" },
-            { v: "fumer", tr: "to smoke", t: "er" },
-            { v: "gagner", tr: "to win/earn", t: "er" },
-            { v: "garder", tr: "to keep", t: "er" },
-            { v: "goûter", tr: "to taste", t: "er" },
-            { v: "habiter", tr: "to live", t: "er" },
-            { v: "inviter", tr: "to invite", t: "er" },
-            { v: "jouer", tr: "to play", t: "er" },
-            { v: "laver", tr: "to wash", t: "er" },
-            { v: "lever", tr: "to lift/raise", t: "er", sp: "lèv" },
-            { v: "manger", tr: "to eat", t: "er", sp: "ger" },
-            { v: "marcher", tr: "to walk", t: "er" },
-            { v: "monter", tr: "to go up", t: "er", aux: "e" },
-            { v: "montrer", tr: "to show", t: "er" },
-            { v: "nager", tr: "to swim", t: "er", sp: "ger" },
-            { v: "oublier", tr: "to forget", t: "er" },
-            { v: "parler", tr: "to speak", t: "er" },
-            { v: "partager", tr: "to share", t: "er", sp: "ger" },
-            { v: "passer", tr: "to pass", t: "er" },
-            { v: "payer", tr: "to pay", t: "er", sp: "paie" },
-            { v: "penser", tr: "to think", t: "er" },
-            { v: "pleurer", tr: "to cry", t: "er" },
-            { v: "porter", tr: "to carry/wear", t: "er" },
-            { v: "poser", tr: "to put/ask", t: "er" },
-            { v: "préparer", tr: "to prepare", t: "er" },
-            { v: "prêter", tr: "to lend", t: "er" },
-            { v: "promener", tr: "to stroll", t: "er", sp: "promèn" },
-            { v: "quitter", tr: "to leave", t: "er" },
-            { v: "raconter", tr: "to tell", t: "er" },
-            { v: "regarder", tr: "to watch", t: "er" },
-            { v: "rencontrer", tr: "to meet", t: "er" },
-            { v: "rentrer", tr: "to return home", t: "er", aux: "e" },
-            { v: "reposer", tr: "to rest", t: "er" },
-            { v: "rester", tr: "to stay", t: "er", aux: "e" },
-            { v: "retourner", tr: "to return", t: "er", aux: "e" },
-            { v: "réveiller", tr: "to wake up", t: "er" },
-            { v: "sembler", tr: "to seem", t: "er" },
-            { v: "téléphoner", tr: "to phone", t: "er" },
-            { v: "tomber", tr: "to fall", t: "er", aux: "e" },
-            { v: "toucher", tr: "to touch", t: "er" },
-            { v: "travailler", tr: "to work", t: "er" },
-            { v: "trouver", tr: "to find", t: "er" },
-            { v: "utiliser", tr: "to use", t: "er" },
-            { v: "visiter", tr: "to visit (place)", t: "er" },
-            { v: "voler", tr: "to fly/steal", t: "er" },
-            { v: "voyager", tr: "to travel", t: "er", sp: "ger" },
+            // ER VERBS
+            { v: "accepter", tr: "to accept", lvl: "A2", t: "er" },
+            { v: "accompagner", tr: "to accompany", lvl: "A2", t: "er" },
+            { v: "acheter", tr: "to buy", lvl: "A1", t: "er", sp: "achèt" },
+            { v: "adorer", tr: "to love/adore", lvl: "A1", t: "er" },
+            { v: "aider", tr: "to help", lvl: "A1", t: "er" },
+            { v: "aimer", tr: "to like/love", lvl: "A1", t: "er" },
+            { v: "ajouter", tr: "to add", lvl: "A2", t: "er" },
+            { v: "allumer", tr: "to turn on", lvl: "A2", t: "er" },
+            { v: "amener", tr: "to bring (person)", lvl: "A2", t: "er", sp: "amèn" },
+            { v: "amuser", tr: "to amuse", lvl: "A2", t: "er" },
+            { v: "annuler", tr: "to cancel", lvl: "A2", t: "er" },
+            { v: "apporter", tr: "to bring (thing)", lvl: "A2", t: "er" },
+            { v: "appeler", tr: "to call", lvl: "A1", t: "er", sp: "appell" },
+            { v: "arrêter", tr: "to stop", lvl: "A2", t: "er" },
+            { v: "arriver", tr: "to arrive", lvl: "A1", t: "er", aux: "e" },
+            { v: "bavarder", tr: "to chat", lvl: "A2", t: "er" },
+            { v: "casser", tr: "to break", lvl: "A2", t: "er" },
+            { v: "changer", tr: "to change", lvl: "A2", t: "er", sp: "ger" },
+            { v: "chanter", tr: "to sing", lvl: "A1", t: "er" },
+            { v: "chercher", tr: "to look for", lvl: "A1", t: "er" },
+            { v: "commencer", tr: "to begin", lvl: "A1", t: "er", sp: "cer" },
+            { v: "commander", tr: "to order", lvl: "A2", t: "er" },
+            { v: "compter", tr: "to count", lvl: "A2", t: "er" },
+            { v: "continuer", tr: "to continue", lvl: "A2", t: "er" },
+            { v: "coucher", tr: "to put to bed", lvl: "A2", t: "er" },
+            { v: "couper", tr: "to cut", lvl: "A2", t: "er" },
+            { v: "coûter", tr: "to cost", lvl: "A1", t: "er" },
+            { v: "crier", tr: "to shout", lvl: "A2", t: "er" },
+            { v: "danser", tr: "to dance", lvl: "A1", t: "er" },
+            { v: "demander", tr: "to ask", lvl: "A1", t: "er" },
+            { v: "dépenser", tr: "to spend", lvl: "A2", t: "er" },
+            { v: "détester", tr: "to hate", lvl: "A1", t: "er" },
+            { v: "dîner", tr: "to dine", lvl: "A1", t: "er" },
+            { v: "donner", tr: "to give", lvl: "A1", t: "er" },
+            { v: "écouter", tr: "to listen", lvl: "A1", t: "er" },
+            { v: "emprunter", tr: "to borrow", lvl: "A2", t: "er" },
+            { v: "enlever", tr: "to remove", lvl: "A2", t: "er", sp: "enlèv" },
+            { v: "entrer", tr: "to enter", lvl: "A1", t: "er", aux: "e" },
+            { v: "espérer", tr: "to hope", lvl: "A2", t: "er", sp: "espèr" },
+            { v: "essayer", tr: "to try", lvl: "A2", t: "er", sp: "essaie" },
+            { v: "excuser", tr: "to excuse", lvl: "A2", t: "er" },
+            { v: "expliquer", tr: "to explain", lvl: "A2", t: "er" },
+            { v: "fermer", tr: "to close", lvl: "A1", t: "er" },
+            { v: "fumer", tr: "to smoke", lvl: "A2", t: "er" },
+            { v: "gagner", tr: "to win/earn", lvl: "A2", t: "er" },
+            { v: "garder", tr: "to keep", lvl: "A2", t: "er" },
+            { v: "goûter", tr: "to taste", lvl: "A2", t: "er" },
+            { v: "habiter", tr: "to live", lvl: "A1", t: "er" },
+            { v: "inviter", tr: "to invite", lvl: "A2", t: "er" },
+            { v: "jouer", tr: "to play", lvl: "A1", t: "er" },
+            { v: "laver", tr: "to wash", lvl: "A1", t: "er" },
+            { v: "lever", tr: "to lift/raise", lvl: "A2", t: "er", sp: "lèv" },
+            { v: "manger", tr: "to eat", lvl: "A1", t: "er", sp: "ger" },
+            { v: "marcher", tr: "to walk", lvl: "A1", t: "er" },
+            { v: "monter", tr: "to go up", lvl: "A1", t: "er", aux: "e" },
+            { v: "montrer", tr: "to show", lvl: "A2", t: "er" },
+            { v: "nager", tr: "to swim", lvl: "A2", t: "er", sp: "ger" },
+            { v: "oublier", tr: "to forget", lvl: "A2", t: "er" },
+            { v: "parler", tr: "to speak", lvl: "A1", t: "er" },
+            { v: "partager", tr: "to share", lvl: "A2", t: "er", sp: "ger" },
+            { v: "passer", tr: "to pass", lvl: "A2", t: "er" },
+            { v: "payer", tr: "to pay", lvl: "A1", t: "er", sp: "paie" },
+            { v: "penser", tr: "to think", lvl: "A1", t: "er" },
+            { v: "pleurer", tr: "to cry", lvl: "A2", t: "er" },
+            { v: "porter", tr: "to carry/wear", lvl: "A2", t: "er" },
+            { v: "poser", tr: "to put/ask", lvl: "A2", t: "er" },
+            { v: "préparer", tr: "to prepare", lvl: "A1", t: "er" },
+            { v: "prêter", tr: "to lend", lvl: "A2", t: "er" },
+            { v: "promener", tr: "to stroll", lvl: "A2", t: "er", sp: "promèn" },
+            { v: "quitter", tr: "to leave", lvl: "A2", t: "er" },
+            { v: "raconter", tr: "to tell", lvl: "A2", t: "er" },
+            { v: "regarder", tr: "to watch", lvl: "A1", t: "er" },
+            { v: "rencontrer", tr: "to meet", lvl: "A2", t: "er" },
+            { v: "rentrer", tr: "to return home", lvl: "A2", t: "er", aux: "e" },
+            { v: "reposer", tr: "to rest", lvl: "A2", t: "er" },
+            { v: "rester", tr: "to stay", lvl: "A1", t: "er", aux: "e" },
+            { v: "retourner", tr: "to return", lvl: "A2", t: "er", aux: "e" },
+            { v: "réveiller", tr: "to wake up", lvl: "A2", t: "er" },
+            { v: "sembler", tr: "to seem", lvl: "A2", t: "er" },
+            { v: "téléphoner", tr: "to phone", lvl: "A1", t: "er" },
+            { v: "tomber", tr: "to fall", lvl: "A1", t: "er", aux: "e" },
+            { v: "toucher", tr: "to touch", lvl: "A2", t: "er" },
+            { v: "travailler", tr: "to work", lvl: "A1", t: "er" },
+            { v: "trouver", tr: "to find", lvl: "A1", t: "er" },
+            { v: "utiliser", tr: "to use", lvl: "A2", t: "er" },
+            { v: "visiter", tr: "to visit (place)", lvl: "A1", t: "er" },
+            { v: "voler", tr: "to fly/steal", lvl: "A2", t: "er" },
+            { v: "voyager", tr: "to travel", lvl: "A1", t: "er", sp: "ger" },
 
-            // REGULAR -IR VERBS
-            { v: "choisir", tr: "to choose", t: "ir" },
-            { v: "finir", tr: "to finish", t: "ir" },
-            { v: "grandir", tr: "to grow", t: "ir" },
-            { v: "grossir", tr: "to gain weight", t: "ir" },
-            { v: "maigrir", tr: "to lose weight", t: "ir" },
-            { v: "obéir", tr: "to obey", t: "ir" },
-            { v: "punir", tr: "to punish", t: "ir" },
-            { v: "réfléchir", tr: "to think/reflect", t: "ir" },
-            { v: "remplir", tr: "to fill", t: "ir" },
-            { v: "réussir", tr: "to succeed", t: "ir" },
-            { v: "rougir", tr: "to blush", t: "ir" },
+            // IR VERBS
+            { v: "choisir", tr: "to choose", lvl: "A1", t: "ir" },
+            { v: "finir", tr: "to finish", lvl: "A1", t: "ir" },
+            { v: "grandir", tr: "to grow", lvl: "A2", t: "ir" },
+            { v: "grossir", tr: "to gain weight", lvl: "A2", t: "ir" },
+            { v: "maigrir", tr: "to lose weight", lvl: "A2", t: "ir" },
+            { v: "obéir", tr: "to obey", lvl: "A2", t: "ir" },
+            { v: "punir", tr: "to punish", lvl: "A2", t: "ir" },
+            { v: "réfléchir", tr: "to think", lvl: "A2", t: "ir" },
+            { v: "remplir", tr: "to fill", lvl: "A2", t: "ir" },
+            { v: "réussir", tr: "to succeed", lvl: "A2", t: "ir" },
+            { v: "rougir", tr: "to blush", lvl: "A2", t: "ir" },
 
-            // REGULAR -RE VERBS
-            { v: "attendre", tr: "to wait", t: "re" },
-            { v: "défendre", tr: "to defend/forbid", t: "re" },
-            { v: "descendre", tr: "to go down", t: "re", aux: "e" },
-            { v: "entendre", tr: "to hear", t: "re" },
-            { v: "perdre", tr: "to lose", t: "re" },
-            { v: "rendre", tr: "to give back", t: "re" },
-            { v: "répondre", tr: "to answer", t: "re" },
-            { v: "vendre", tr: "to sell", t: "re" }
+            // RE VERBS
+            { v: "attendre", tr: "to wait", lvl: "A1", t: "re" },
+            { v: "défendre", tr: "to defend/forbid", lvl: "A2", t: "re" },
+            { v: "descendre", tr: "to go down", lvl: "A2", t: "re", aux: "e" },
+            { v: "entendre", tr: "to hear", lvl: "A1", t: "re" },
+            { v: "perdre", tr: "to lose", lvl: "A2", t: "re" },
+            { v: "rendre", tr: "to give back", lvl: "A2", t: "re" },
+            { v: "répondre", tr: "to answer", lvl: "A1", t: "re" },
+            { v: "vendre", tr: "to sell", lvl: "A1", t: "re" }
         ];
 
-        // ENGINE
+        // STATE & ENGINE
+        let activeFilter = 'all';
+
         const pronouns = ["Je / J'", "Tu", "Il / Elle / On", "Nous", "Vous", "Ils / Elles"];
         const pc_avoir = ["ai", "as", "a", "avons", "avez", "ont"];
         const pc_etre = ["suis", "es", "est", "sommes", "êtes", "sont"];
@@ -398,21 +458,52 @@
         const detailTitle = document.getElementById('detailTitle');
         const detailContent = document.getElementById('detailContent');
 
-        function renderList(filter = "") {
+        function setFilter(filterValue, element) {
+            // Update active state in UI
+            document.querySelectorAll('.filter-chip').forEach(chip => chip.classList.remove('active'));
+            element.classList.add('active');
+            
+            // Update state and re-render list
+            activeFilter = filterValue;
+            renderList(searchInput.value);
+        }
+
+        function renderList(searchText = "") {
             verbListEl.innerHTML = "";
-            const filtered = db.filter(v => 
-                v.v.toLowerCase().includes(filter.toLowerCase()) || 
-                v.tr.toLowerCase().includes(filter.toLowerCase())
-            );
+            
+            // Apply both text search AND category filter
+            const filtered = db.filter(v => {
+                const matchesSearch = v.v.toLowerCase().includes(searchText.toLowerCase()) || 
+                                      v.tr.toLowerCase().includes(searchText.toLowerCase());
+                
+                let matchesCategory = true;
+                if (activeFilter === 'A1') matchesCategory = (v.lvl === 'A1');
+                if (activeFilter === 'A2') matchesCategory = (v.lvl === 'A2');
+                if (activeFilter === 'reg') matchesCategory = (v.t === 'er' || v.t === 'ir' || v.t === 're');
+                if (activeFilter === 'irreg') matchesCategory = (v.t === 'irreg');
+
+                return matchesSearch && matchesCategory;
+            });
+
             filtered.sort((a,b) => a.v.localeCompare(b.v));
 
             filtered.forEach(verbObj => {
                 const div = document.createElement('div');
                 div.className = 'verb-item';
+                
+                // Determine Tag Text and Class
+                const typeText = verbObj.t === 'irreg' ? '不規則' : `-${verbObj.t}`;
+                const typeClass = verbObj.t === 'irreg' ? 'tag-irreg' : 'tag-reg';
+                const lvlClass = verbObj.lvl === 'A1' ? 'tag-a1' : 'tag-a2';
+
                 div.innerHTML = `
-                    <div>
+                    <div class="verb-info">
                         <div class="verb-title">${verbObj.v}</div>
                         <div class="verb-trans">${verbObj.tr}</div>
+                        <div class="tags-row">
+                            <span class="tag ${lvlClass}">${verbObj.lvl}</span>
+                            <span class="tag ${typeClass}">${typeText}</span>
+                        </div>
                     </div>
                     <div class="chevron">›</div>
                 `;
@@ -432,24 +523,29 @@
         }
 
         function showDetail(verbObj) {
-            // Dismiss keyboard if open
             searchInput.blur(); 
-            
             detailTitle.innerText = verbObj.v;
+            
             const conj = conjugate(verbObj);
+            const typeText = verbObj.t === 'irreg' ? '不規則動詞' : `規則動詞 (-${verbObj.t})`;
+            const typeClass = verbObj.t === 'irreg' ? 'tag-irreg' : 'tag-reg';
+            const lvlClass = verbObj.lvl === 'A1' ? 'tag-a1' : 'tag-a2';
+
             detailContent.innerHTML = `
                 <div class="verb-header">
                     <h2>${verbObj.v}</h2>
                     <p>${verbObj.tr}</p>
+                    <div class="tags-row">
+                        <span class="tag ${lvlClass}">${verbObj.lvl}</span>
+                        <span class="tag ${typeClass}">${typeText}</span>
+                    </div>
                 </div>
-                ${buildCard("Présent", pronouns, conj.pres)}
-                ${buildCard("Passé Composé", pronouns, conj.pc)}
-                ${buildCard("Imparfait", pronouns, conj.imp)}
+                ${buildCard("Présent (現在式)", pronouns, conj.pres)}
+                ${buildCard("Passé Composé (過去式)", pronouns, conj.pc)}
+                ${buildCard("Imparfait (未完成過去式)", pronouns, conj.imp)}
             `;
             
-            // Scroll to top of detail view
             detailContent.scrollTop = 0;
-            // Slide in
             detailView.classList.add('active');
         }
 
