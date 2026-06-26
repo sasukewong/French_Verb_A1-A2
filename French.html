@@ -1,0 +1,466 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>French Verbs</title>
+    <style>
+        :root {
+            /* iOS System Colors */
+            --bg: #f2f2f7; 
+            --card-bg: #ffffff;
+            --text-main: #000000;
+            --text-sub: #8e8e93;
+            --blue: #007aff;
+            --border: #c6c6c8;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", Arial, sans-serif;
+            background-color: var(--bg);
+            color: var(--text-main);
+            margin: 0;
+            padding: 0;
+            overflow: hidden; /* Prevent bouncing of the whole page */
+            -webkit-font-smoothing: antialiased;
+        }
+
+        /* View Containers */
+        .view {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: var(--bg);
+            display: flex;
+            flex-direction: column;
+            transition: transform 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+        }
+
+        #listView { transform: translateX(0); z-index: 1; }
+        
+        #detailView { 
+            transform: translateX(100%); 
+            z-index: 2; 
+            background-color: var(--bg);
+            box-shadow: -5px 0 15px rgba(0,0,0,0.1);
+        }
+        #detailView.active { transform: translateX(0); }
+
+        /* Headers with Safe Area for Dynamic Island */
+        .header {
+            background-color: var(--card-bg);
+            padding-top: max(10px, env(safe-area-inset-top));
+            padding-bottom: 10px;
+            text-align: center;
+            border-bottom: 1px solid var(--border);
+            position: relative;
+            z-index: 10;
+        }
+        .header h1 {
+            margin: 0;
+            font-size: 17px;
+            font-weight: 600;
+            line-height: 44px;
+        }
+
+        /* Navigation Buttons */
+        .back-btn {
+            position: absolute;
+            left: 10px;
+            bottom: 10px; /* Align with text */
+            color: var(--blue);
+            font-size: 17px;
+            background: none;
+            border: none;
+            line-height: 44px;
+            padding: 0 10px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+        }
+        .back-btn::before {
+            content: "‹";
+            font-size: 28px;
+            margin-right: 5px;
+            line-height: 1;
+            margin-top: -4px;
+        }
+
+        /* Search Bar */
+        .search-container {
+            padding: 10px 16px;
+            background-color: var(--card-bg);
+            border-bottom: 1px solid var(--border);
+        }
+        #searchInput {
+            width: 100%;
+            padding: 10px 14px;
+            font-size: 17px;
+            background-color: #e3e3e8;
+            border: none;
+            border-radius: 10px;
+            box-sizing: border-box;
+            outline: none;
+            -webkit-appearance: none;
+        }
+
+        /* Scrollable Content Areas */
+        .scroll-content {
+            flex: 1;
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch; /* Smooth iOS scrolling */
+            padding-bottom: max(20px, env(safe-area-inset-bottom));
+        }
+
+        /* List Items */
+        .verb-list {
+            background: var(--card-bg);
+            border-top: 1px solid var(--border);
+            border-bottom: 1px solid var(--border);
+            margin-top: 10px;
+        }
+        .verb-item {
+            padding: 12px 16px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            cursor: pointer;
+        }
+        .verb-item:last-child { border-bottom: none; }
+        .verb-item:active { background-color: #e5e5ea; }
+        
+        .verb-title { font-size: 17px; font-weight: 500; }
+        .verb-trans { font-size: 15px; color: var(--text-sub); }
+        .chevron { color: #c7c7cc; font-size: 20px; font-weight: bold;}
+
+        /* Detail Cards */
+        .verb-header {
+            padding: 20px 16px 10px;
+        }
+        .verb-header h2 { margin: 0; font-size: 32px; font-weight: 700; color: var(--text-main); }
+        .verb-header p { margin: 5px 0 0 0; font-size: 17px; color: var(--text-sub); }
+
+        .card {
+            background: var(--card-bg);
+            border-radius: 12px;
+            margin: 16px;
+            padding: 0;
+            overflow: hidden;
+        }
+        .card-header {
+            background-color: #f9f9f9;
+            padding: 10px 16px;
+            font-weight: 600;
+            font-size: 15px;
+            border-bottom: 1px solid var(--border);
+            color: var(--text-sub);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .conj-row { 
+            display: flex; 
+            justify-content: space-between; 
+            padding: 12px 16px; 
+            border-bottom: 1px solid var(--border); 
+            font-size: 17px;
+        }
+        .conj-row:last-child { border-bottom: none; }
+        .pronoun { color: var(--text-sub); width: 40%; }
+        .verb-form { color: var(--text-main); font-weight: 500; width: 60%; }
+
+    </style>
+</head>
+<body>
+
+    <div id="listView" class="view">
+        <div class="header">
+            <h1>Verbs A1-A2</h1>
+        </div>
+        <div class="search-container">
+            <input type="text" id="searchInput" placeholder="Search a verb..." autocomplete="off" autocorrect="off" autocapitalize="none">
+        </div>
+        <div class="scroll-content">
+            <div class="verb-list" id="verbList"></div>
+        </div>
+    </div>
+
+    <div id="detailView" class="view">
+        <div class="header">
+            <button class="back-btn" onclick="hideDetail()">Back</button>
+            <h1 id="detailTitle">Verb</h1>
+        </div>
+        <div class="scroll-content" id="detailContent">
+            </div>
+    </div>
+
+    <script>
+        // THE DATABASE (130+ A1-A2 Verbs)
+        const db = [
+            { v: "être", tr: "to be", t: "irreg", pres: ["suis","es","est","sommes","êtes","sont"], pp: "été", aux: "a", imp_stem: "ét" },
+            { v: "avoir", tr: "to have", t: "irreg", pres: ["ai","as","a","avons","avez","ont"], pp: "eu", aux: "a", imp_stem: "av" },
+            { v: "aller", tr: "to go", t: "irreg", pres: ["vais","vas","va","allons","allez","vont"], pp: "allé", aux: "e", imp_stem: "all" },
+            { v: "faire", tr: "to do/make", t: "irreg", pres: ["fais","fais","fait","faisons","faites","font"], pp: "fait", aux: "a", imp_stem: "fais" },
+            { v: "dire", tr: "to say", t: "irreg", pres: ["dis","dis","dit","disons","dites","disent"], pp: "dit", aux: "a", imp_stem: "dis" },
+            { v: "pouvoir", tr: "to be able to", t: "irreg", pres: ["peux","peux","peut","pouvons","pouvez","peuvent"], pp: "pu", aux: "a", imp_stem: "pouv" },
+            { v: "vouloir", tr: "to want", t: "irreg", pres: ["veux","veux","veut","voulons","voulez","veulent"], pp: "voulu", aux: "a", imp_stem: "voul" },
+            { v: "savoir", tr: "to know (fact)", t: "irreg", pres: ["sais","sais","sait","savons","savez","savent"], pp: "su", aux: "a", imp_stem: "sav" },
+            { v: "voir", tr: "to see", t: "irreg", pres: ["vois","vois","voit","voyons","voyez","voient"], pp: "vu", aux: "a", imp_stem: "voy" },
+            { v: "devoir", tr: "to have to", t: "irreg", pres: ["dois","dois","doit","devons","devez","doivent"], pp: "dû", aux: "a", imp_stem: "dev" },
+            { v: "venir", tr: "to come", t: "irreg", pres: ["viens","viens","vient","venons","venez","viennent"], pp: "venu", aux: "e", imp_stem: "ven" },
+            { v: "prendre", tr: "to take", t: "irreg", pres: ["prends","prends","prend","prenons","prenez","prennent"], pp: "pris", aux: "a", imp_stem: "pren" },
+            { v: "mettre", tr: "to put", t: "irreg", pres: ["mets","mets","met","mettons","mettez","mettent"], pp: "mis", aux: "a", imp_stem: "mett" },
+            { v: "lire", tr: "to read", t: "irreg", pres: ["lis","lis","lit","lisons","lisez","lisent"], pp: "lu", aux: "a", imp_stem: "lis" },
+            { v: "écrire", tr: "to write", t: "irreg", pres: ["écris","écris","écrit","écrivons","écrivez","écrivent"], pp: "écrit", aux: "a", imp_stem: "écriv" },
+            { v: "boire", tr: "to drink", t: "irreg", pres: ["bois","bois","boit","buvons","buvez","boivent"], pp: "bu", aux: "a", imp_stem: "buv" },
+            { v: "dormir", tr: "to sleep", t: "irreg", pres: ["dors","dors","dort","dormons","dormez","dorment"], pp: "dormi", aux: "a", imp_stem: "dorm" },
+            { v: "partir", tr: "to leave", t: "irreg", pres: ["pars","pars","part","partons","partez","partent"], pp: "parti", aux: "e", imp_stem: "part" },
+            { v: "sortir", tr: "to go out", t: "irreg", pres: ["sors","sors","sort","sortons","sortez","sortent"], pp: "sorti", aux: "e", imp_stem: "sort" },
+            { v: "connaître", tr: "to know (person)", t: "irreg", pres: ["connais","connais","connaît","connaissons","connaissez","connaissent"], pp: "connu", aux: "a", imp_stem: "connaiss" },
+
+            // REGULAR -ER VERBS
+            { v: "accepter", tr: "to accept", t: "er" },
+            { v: "accompagner", tr: "to accompany", t: "er" },
+            { v: "acheter", tr: "to buy", t: "er", sp: "achèt" },
+            { v: "adorer", tr: "to love/adore", t: "er" },
+            { v: "aider", tr: "to help", t: "er" },
+            { v: "aimer", tr: "to like/love", t: "er" },
+            { v: "ajouter", tr: "to add", t: "er" },
+            { v: "allumer", tr: "to turn on", t: "er" },
+            { v: "amener", tr: "to bring", t: "er", sp: "amèn" },
+            { v: "amuser", tr: "to amuse", t: "er" },
+            { v: "annuler", tr: "to cancel", t: "er" },
+            { v: "apporter", tr: "to bring (thing)", t: "er" },
+            { v: "appeler", tr: "to call", t: "er", sp: "appell" },
+            { v: "arrêter", tr: "to stop", t: "er" },
+            { v: "arriver", tr: "to arrive", t: "er", aux: "e" },
+            { v: "bavarder", tr: "to chat", t: "er" },
+            { v: "casser", tr: "to break", t: "er" },
+            { v: "changer", tr: "to change", t: "er", sp: "ger" },
+            { v: "chanter", tr: "to sing", t: "er" },
+            { v: "chercher", tr: "to look for", t: "er" },
+            { v: "commencer", tr: "to begin", t: "er", sp: "cer" },
+            { v: "commander", tr: "to order", t: "er" },
+            { v: "compter", tr: "to count", t: "er" },
+            { v: "continuer", tr: "to continue", t: "er" },
+            { v: "coucher", tr: "to put to bed", t: "er" },
+            { v: "couper", tr: "to cut", t: "er" },
+            { v: "coûter", tr: "to cost", t: "er" },
+            { v: "crier", tr: "to shout", t: "er" },
+            { v: "danser", tr: "to dance", t: "er" },
+            { v: "demander", tr: "to ask", t: "er" },
+            { v: "dépenser", tr: "to spend", t: "er" },
+            { v: "détester", tr: "to hate", t: "er" },
+            { v: "dîner", tr: "to dine", t: "er" },
+            { v: "donner", tr: "to give", t: "er" },
+            { v: "écouter", tr: "to listen", t: "er" },
+            { v: "emprunter", tr: "to borrow", t: "er" },
+            { v: "enlever", tr: "to remove", t: "er", sp: "enlèv" },
+            { v: "entrer", tr: "to enter", t: "er", aux: "e" },
+            { v: "espérer", tr: "to hope", t: "er", sp: "espèr" },
+            { v: "essayer", tr: "to try", t: "er", sp: "essaie" },
+            { v: "excuser", tr: "to excuse", t: "er" },
+            { v: "expliquer", tr: "to explain", t: "er" },
+            { v: "fermer", tr: "to close", t: "er" },
+            { v: "fumer", tr: "to smoke", t: "er" },
+            { v: "gagner", tr: "to win/earn", t: "er" },
+            { v: "garder", tr: "to keep", t: "er" },
+            { v: "goûter", tr: "to taste", t: "er" },
+            { v: "habiter", tr: "to live", t: "er" },
+            { v: "inviter", tr: "to invite", t: "er" },
+            { v: "jouer", tr: "to play", t: "er" },
+            { v: "laver", tr: "to wash", t: "er" },
+            { v: "lever", tr: "to lift/raise", t: "er", sp: "lèv" },
+            { v: "manger", tr: "to eat", t: "er", sp: "ger" },
+            { v: "marcher", tr: "to walk", t: "er" },
+            { v: "monter", tr: "to go up", t: "er", aux: "e" },
+            { v: "montrer", tr: "to show", t: "er" },
+            { v: "nager", tr: "to swim", t: "er", sp: "ger" },
+            { v: "oublier", tr: "to forget", t: "er" },
+            { v: "parler", tr: "to speak", t: "er" },
+            { v: "partager", tr: "to share", t: "er", sp: "ger" },
+            { v: "passer", tr: "to pass", t: "er" },
+            { v: "payer", tr: "to pay", t: "er", sp: "paie" },
+            { v: "penser", tr: "to think", t: "er" },
+            { v: "pleurer", tr: "to cry", t: "er" },
+            { v: "porter", tr: "to carry/wear", t: "er" },
+            { v: "poser", tr: "to put/ask", t: "er" },
+            { v: "préparer", tr: "to prepare", t: "er" },
+            { v: "prêter", tr: "to lend", t: "er" },
+            { v: "promener", tr: "to stroll", t: "er", sp: "promèn" },
+            { v: "quitter", tr: "to leave", t: "er" },
+            { v: "raconter", tr: "to tell", t: "er" },
+            { v: "regarder", tr: "to watch", t: "er" },
+            { v: "rencontrer", tr: "to meet", t: "er" },
+            { v: "rentrer", tr: "to return home", t: "er", aux: "e" },
+            { v: "reposer", tr: "to rest", t: "er" },
+            { v: "rester", tr: "to stay", t: "er", aux: "e" },
+            { v: "retourner", tr: "to return", t: "er", aux: "e" },
+            { v: "réveiller", tr: "to wake up", t: "er" },
+            { v: "sembler", tr: "to seem", t: "er" },
+            { v: "téléphoner", tr: "to phone", t: "er" },
+            { v: "tomber", tr: "to fall", t: "er", aux: "e" },
+            { v: "toucher", tr: "to touch", t: "er" },
+            { v: "travailler", tr: "to work", t: "er" },
+            { v: "trouver", tr: "to find", t: "er" },
+            { v: "utiliser", tr: "to use", t: "er" },
+            { v: "visiter", tr: "to visit (place)", t: "er" },
+            { v: "voler", tr: "to fly/steal", t: "er" },
+            { v: "voyager", tr: "to travel", t: "er", sp: "ger" },
+
+            // REGULAR -IR VERBS
+            { v: "choisir", tr: "to choose", t: "ir" },
+            { v: "finir", tr: "to finish", t: "ir" },
+            { v: "grandir", tr: "to grow", t: "ir" },
+            { v: "grossir", tr: "to gain weight", t: "ir" },
+            { v: "maigrir", tr: "to lose weight", t: "ir" },
+            { v: "obéir", tr: "to obey", t: "ir" },
+            { v: "punir", tr: "to punish", t: "ir" },
+            { v: "réfléchir", tr: "to think/reflect", t: "ir" },
+            { v: "remplir", tr: "to fill", t: "ir" },
+            { v: "réussir", tr: "to succeed", t: "ir" },
+            { v: "rougir", tr: "to blush", t: "ir" },
+
+            // REGULAR -RE VERBS
+            { v: "attendre", tr: "to wait", t: "re" },
+            { v: "défendre", tr: "to defend/forbid", t: "re" },
+            { v: "descendre", tr: "to go down", t: "re", aux: "e" },
+            { v: "entendre", tr: "to hear", t: "re" },
+            { v: "perdre", tr: "to lose", t: "re" },
+            { v: "rendre", tr: "to give back", t: "re" },
+            { v: "répondre", tr: "to answer", t: "re" },
+            { v: "vendre", tr: "to sell", t: "re" }
+        ];
+
+        // ENGINE
+        const pronouns = ["Je / J'", "Tu", "Il / Elle / On", "Nous", "Vous", "Ils / Elles"];
+        const pc_avoir = ["ai", "as", "a", "avons", "avez", "ont"];
+        const pc_etre = ["suis", "es", "est", "sommes", "êtes", "sont"];
+        
+        function startsWithVowel(word) { return /^[aeiouhéèêàâîïôûù]/i.test(word); }
+        function formatPronoun(pronounStr, verbStr) {
+            if (pronounStr === "Je / J'") return startsWithVowel(verbStr) ? "J'" : "Je";
+            return pronounStr;
+        }
+
+        function conjugate(verbObj) {
+            let pres = [], pc = [], imp = [];
+            const isEtre = verbObj.aux === "e";
+            const auxVerbs = isEtre ? pc_etre : pc_avoir;
+            const inf = verbObj.v;
+
+            if (verbObj.t === "irreg") {
+                pres = verbObj.pres;
+                let agreement = isEtre ? "(e)(s)" : "";
+                pc = auxVerbs.map(a => `${a} ${verbObj.pp}${agreement}`);
+                const imp_endings = ["ais", "ais", "ait", "ions", "iez", "aient"];
+                imp = imp_endings.map(e => verbObj.imp_stem + e);
+            } 
+            else if (verbObj.t === "er") {
+                const stem = inf.slice(0, -2);
+                let pres_stems = [stem, stem, stem, stem, stem, stem];
+                if (verbObj.sp) {
+                    if (verbObj.sp === "ger") pres_stems[3] = stem + "e"; 
+                    else if (verbObj.sp === "cer") pres_stems[3] = stem.slice(0,-1) + "ç"; 
+                    else { pres_stems[0]=verbObj.sp; pres_stems[1]=verbObj.sp; pres_stems[2]=verbObj.sp; pres_stems[5]=verbObj.sp; }
+                }
+                pres = [pres_stems[0]+"e", pres_stems[1]+"es", pres_stems[2]+"e", pres_stems[3]+"ons", pres_stems[4]+"ez", pres_stems[5]+"ent"];
+                let agreement = isEtre ? "(e)(s)" : "";
+                pc = auxVerbs.map(a => `${a} ${stem}é${agreement}`);
+                let imp_stem = pres_stems[3];
+                const imp_endings = ["ais", "ais", "ait", "ions", "iez", "aient"];
+                imp = imp_endings.map(e => imp_stem + e);
+            }
+            else if (verbObj.t === "ir") {
+                const stem = inf.slice(0, -2);
+                pres = [stem+"is", stem+"is", stem+"it", stem+"issons", stem+"issez", stem+"issent"];
+                pc = auxVerbs.map(a => `${a} ${stem}i`);
+                const imp_endings = ["issais", "issais", "issait", "issions", "issiez", "issaient"];
+                imp = imp_endings.map(e => stem + e);
+            }
+            else if (verbObj.t === "re") {
+                const stem = inf.slice(0, -2);
+                pres = [stem+"s", stem+"s", stem, stem+"ons", stem+"ez", stem+"ent"];
+                let agreement = isEtre ? "(e)(s)" : "";
+                pc = auxVerbs.map(a => `${a} ${stem}u${agreement}`);
+                const imp_endings = ["ais", "ais", "ait", "ions", "iez", "aient"];
+                imp = imp_endings.map(e => stem + e);
+            }
+            return { pres, pc, imp };
+        }
+
+        // DOM ELEMENTS
+        const verbListEl = document.getElementById('verbList');
+        const searchInput = document.getElementById('searchInput');
+        const detailView = document.getElementById('detailView');
+        const detailTitle = document.getElementById('detailTitle');
+        const detailContent = document.getElementById('detailContent');
+
+        function renderList(filter = "") {
+            verbListEl.innerHTML = "";
+            const filtered = db.filter(v => 
+                v.v.toLowerCase().includes(filter.toLowerCase()) || 
+                v.tr.toLowerCase().includes(filter.toLowerCase())
+            );
+            filtered.sort((a,b) => a.v.localeCompare(b.v));
+
+            filtered.forEach(verbObj => {
+                const div = document.createElement('div');
+                div.className = 'verb-item';
+                div.innerHTML = `
+                    <div>
+                        <div class="verb-title">${verbObj.v}</div>
+                        <div class="verb-trans">${verbObj.tr}</div>
+                    </div>
+                    <div class="chevron">›</div>
+                `;
+                div.onclick = () => showDetail(verbObj);
+                verbListEl.appendChild(div);
+            });
+        }
+
+        function buildCard(title, pronounList, verbForms) {
+            let html = `<div class="card"><div class="card-header">${title}</div>`;
+            for(let i=0; i<6; i++) {
+                let p = formatPronoun(pronounList[i], verbForms[i]);
+                html += `<div class="conj-row"><span class="pronoun">${p}</span><span class="verb-form">${verbForms[i]}</span></div>`;
+            }
+            html += `</div>`;
+            return html;
+        }
+
+        function showDetail(verbObj) {
+            // Dismiss keyboard if open
+            searchInput.blur(); 
+            
+            detailTitle.innerText = verbObj.v;
+            const conj = conjugate(verbObj);
+            detailContent.innerHTML = `
+                <div class="verb-header">
+                    <h2>${verbObj.v}</h2>
+                    <p>${verbObj.tr}</p>
+                </div>
+                ${buildCard("Présent", pronouns, conj.pres)}
+                ${buildCard("Passé Composé", pronouns, conj.pc)}
+                ${buildCard("Imparfait", pronouns, conj.imp)}
+            `;
+            
+            // Scroll to top of detail view
+            detailContent.scrollTop = 0;
+            // Slide in
+            detailView.classList.add('active');
+        }
+
+        function hideDetail() {
+            detailView.classList.remove('active');
+        }
+
+        searchInput.addEventListener('input', (e) => renderList(e.target.value));
+
+        // Initial Load
+        renderList();
+    </script>
+</body>
+</html>
